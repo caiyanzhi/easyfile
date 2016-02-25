@@ -5,9 +5,9 @@ android {
     buildToolsVersion "23.0.2"
 
     defaultConfig {
-        applicationId "yanzhi.easyfile.easyfile"
+        applicationId "yanzhi.easyfile.radompathtest"
         minSdkVersion 17
-        targetSdkVersion 22
+        targetSdkVersion 23
         versionCode 1
         versionName "1.0"
     }
@@ -22,7 +22,4 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:23.1.1'
-    compile 'io.reactivex:rxandroid:1.1.0+'
-    compile 'com.squareup.retrofit:retrofit:1.9.0'
-    compile 'com.jakewharton:butterknife:6.0.0'
 }
