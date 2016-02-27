@@ -1,4 +1,4 @@
-package yanzhi.easyfile.easyfile;
+package yanzhi.easyfile.easyfile.util;
 
 import android.util.Log;
 

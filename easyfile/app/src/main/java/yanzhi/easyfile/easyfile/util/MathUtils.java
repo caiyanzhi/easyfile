@@ -1,4 +1,4 @@
-package yanzhi.easyfile.easyfile;
+package yanzhi.easyfile.easyfile.util;
 
 /**
  * @desc Created by yanzhi on 2016-02-22.
