@@ -9,4 +9,10 @@
         android:id="@+id/text" android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/download"
+        android:text="download"/>
+
 </RelativeLayout>

@@ -6,6 +6,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import butterknife.ButterKnife;
@@ -16,7 +18,8 @@ import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
-import yanzhi.easyfile.easyfile.util.TestUtil;
+import yanzhi.easyfile.easyfile.Network.NetworkManager;
+import yanzhi.easyfile.easyfile.Network.NetworkRequest;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -24,13 +27,65 @@ public class HomeActivity extends AppCompatActivity {
 
     @InjectView(R.id.text)
     TextView textView;
+    @InjectView(R.id.download)
+    Button downloadBt;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
         ButterKnife.inject(this);
         String dirPath = Environment.getExternalStorageDirectory().getPath() + "/TempTestOne";
-        TestUtil.testOneRandomPathConsume(dirPath);
+        //TestUtil.testOneRandomPathConsume(dirPath);
+
+
+        downloadBt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        NetworkRequest request = new NetworkRequest();
+                        request.setHttpMethod(NetworkRequest.HttpMethod.HttpMethod_MULTIPART);
+                        NetworkManager.httpSend(request);
+//                        OkHttpClient client = new OkHttpClient();
+//                        Request request = new Request.Builder()
+//                                .url("http://sdcs.sysu.edu.cn/wp-content/uploads/2016/02/教务部关于选派我校优秀本科生2016学年秋季学期赴加拿大阿尔伯塔大学、新加坡国立大学交流学习的通知.doc")
+//                                .build();
+//
+//                        Log.v("cyz",""+request.url());
+//                        try {
+//                            Response response = client.newCall(request).execute();
+//                            if (response.isSuccessful()) {
+//                                Headers responseHeaders = response.headers();
+//                                long contentLen = response.body().contentLength();
+//                                Log.v("cyz","contentLen " + contentLen);
+//                                InputStream inputStream =  response.body().byteStream();
+//                                for (int i = 0; i < responseHeaders.size(); i++) {
+//                                    Log.v("cyz"," i " + i + " " + responseHeaders.name(i) + ":" + responseHeaders.value(i));
+//                                }
+//                                byte[] buffer = new byte[HttpClientConfig.RECEIVE_BUFF_LEN_INTEGER];
+//
+//                                FileOutputStream outputStream = new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/教务部关于选派我校优秀本科生2016学年秋季学期赴加拿大阿尔伯塔大学、新加坡国立大学交流学习的通知.doc");
+//                                int readLen =-1;
+//                                int byteLen = 0;
+//                                while((readLen = inputStream.read(buffer)) != -1) {
+//                                    outputStream.write(buffer,0, readLen);
+//                                    byteLen += readLen;
+//                                }
+//                                Log.v("cyz","byteLen " + byteLen);
+//                                outputStream.flush();
+//                                outputStream.close();
+//                                Log.v("cyz","download ok");
+//                            } else {
+//                                throw new IOException("Unexpected code " + response);
+//                            }
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+                    }
+                }).start();
+            }
+        });
     }
 
     @Override
