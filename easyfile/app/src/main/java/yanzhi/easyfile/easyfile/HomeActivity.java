@@ -45,7 +45,7 @@ public class HomeActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         NetworkRequest request = new NetworkRequest();
-                        request.setHttpMethod(NetworkRequest.HttpMethod.HttpMethod_GET);
+                        request.setHttpMethod(NetworkRequest.HttpMethod.HttpMethod_MULTIPART);
                         NetworkManager.httpSend(request);
 //                        OkHttpClient client = new OkHttpClient();
 //                        Request request = new Request.Builder()

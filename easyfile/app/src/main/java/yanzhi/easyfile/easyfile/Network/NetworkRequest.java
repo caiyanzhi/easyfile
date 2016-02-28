@@ -25,7 +25,7 @@ public class NetworkRequest {
         fileList = new ArrayList<>();
         fileList.add(new FileEntity(new File(Environment.getExternalStorageDirectory().getPath()+"/stack.txt"),"application/octet-stream","file1"));
 
-        fileList.add(new FileEntity(new File(Environment.getExternalStorageDirectory().getPath()+"/result_jfinal-1.8-manual.pdf"),"application/octet-stream","file2"));
+        fileList.add(new FileEntity(new File(Environment.getExternalStorageDirectory().getPath()+"/jfinal-1.8-manual.pdf"),"application/octet-stream","file2"));
         params = new HashMap<>();
         params.put("user","caiyanzhi");
         cookies.put("username2","cyz");
