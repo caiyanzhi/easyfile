@@ -2,7 +2,7 @@ package yanzhi.easyfile.easyfile.Network;
 
 import org.json.JSONObject;
 
-import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -10,10 +10,15 @@ import java.util.List;
  */
 public class NetworkRequest {
     public HttpMethod httpMethod;
-    public String url = "http://192.168.1.105:5000/upload2";
+    public String url = "http://192.168.1.105:5000/upload2?abc=cyz";
     public String paramJson;
-    public List<File> fileList;
+    public List<FileEntity> fileList;
+    public HashMap<String,String> cookies;
+    public HashMap<String,String> params;
+
     public NetworkRequest(){
+        cookies = new HashMap<>();
+        cookies.put("username2","cyz");
         try {
             JSONObject object = new JSONObject();
             object.put("title", "cyz");
@@ -23,7 +28,16 @@ public class NetworkRequest {
         }
     }
     public String getParamJson(){
-        return paramJson;
+        try {
+            JSONObject object = new JSONObject();
+            for(HashMap.Entry<String,String> entry : params.entrySet()) {
+                object.put(entry.getKey(), entry.getValue());
+            }
+            paramJson = object.toString();
+            return paramJson;
+        } catch (Exception e){
+            return null;
+        }
     }
 
     public String getUrl(){

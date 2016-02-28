@@ -3,11 +3,11 @@ package yanzhi.easyfile.easyfile.Network;
 import android.os.Environment;
 import android.util.Log;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import okhttp3.Cookie;
@@ -31,38 +31,25 @@ public class NetworkManager {
 
     public static void httpSend(NetworkRequest networkRequest){
         OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
-        builder.cookieJar(new CookieJar() {
-            @Override
-            public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
-                Log.v("cyz","save cookie from " + url + " cookies size " + cookies.size());
-            }
 
-            @Override
-            public List<Cookie> loadForRequest(HttpUrl url) {
-                ArrayList<Cookie> cookies = new ArrayList<Cookie>();
-                cookies.add(Cookie.parse(url,"username=cyz; Path=/"));
-                return cookies;
-            }
-        });
+        //设置cookies
+        setCookies(builder,networkRequest);
+
         OkHttpClient client = builder.build();
 
         Request request;
-        if (networkRequest.getHttpMethod() == NetworkRequest.HttpMethod.HttpMethod_POST) {
-            RequestBody requestBody = RequestBody.create(JSON,networkRequest.getParamJson());
+        String paramsString = networkRequest.getParamJson();
+
+        if (networkRequest.getHttpMethod() == NetworkRequest.HttpMethod.HttpMethod_POST && paramsString != null) {
+            RequestBody requestBody = RequestBody.create(JSON,paramsString);
             request = new Request.Builder()
                     .url(networkRequest.getUrl())
                     .post(requestBody)
                     .build();
         } else if (networkRequest.getHttpMethod() == NetworkRequest.HttpMethod.HttpMethod_MULTIPART) {
-            RequestBody requestBody = new MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart("title", "SquareLogo")
-                    .addFormDataPart("file", "jfinal-1.8-manual.pdf",
-                            RequestBody.create(MEDIA_TYPE_PNG, new File(Environment.getExternalStorageDirectory().getPath() + "/jfinal-1.8-manual.pdf")))
-                    .build();
+            RequestBody requestBody = getMultipartBuilderBody(networkRequest);
             request = new Request.Builder()
                     .url(networkRequest.getUrl())
-                    .header("Set-Cookie", "username=cyz; Path=/")
                     .method("POST",requestBody)
                     .build();
         } else {
@@ -104,5 +91,44 @@ public class NetworkManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static MultipartBody getMultipartBuilderBody(NetworkRequest networkRequest) {
+        MultipartBody.Builder builder = new MultipartBody.Builder().setType(MultipartBody.FORM);
+        if(networkRequest.params != null) {
+            for(HashMap.Entry<String,String> entry : networkRequest.params.entrySet()) {
+                builder.addFormDataPart(entry.getKey(),entry.getValue());
+            }
+        }
+        if(networkRequest.fileList != null) {
+            for(FileEntity fileEntity : networkRequest.fileList) {
+                builder.addFormDataPart(fileEntity.getFileNameString(), fileEntity.getFile().getName(),
+                        RequestBody.create(MediaType.parse(fileEntity.getContentType()), fileEntity.getFile()));
+            }
+        }
+        return builder.build();
+    }
+
+    private static void setCookies(OkHttpClient.Builder builder, final NetworkRequest networkRequest) {
+        builder.cookieJar(new CookieJar() {
+            @Override
+            public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
+                Log.v("cyz","save cookie from " + url + " cookies size " + cookies.size());
+            }
+
+            @Override
+            public List<Cookie> loadForRequest(HttpUrl url) {
+                ArrayList<Cookie> cookies = new ArrayList<Cookie>();
+                if(networkRequest.cookies == null) {
+                    return cookies;
+                }
+
+                for(HashMap.Entry<String,String> entry : networkRequest.cookies.entrySet()) {
+                    cookies.add(Cookie.parse(url,entry.getKey()+"="+entry.getValue()));
+                }
+
+                return cookies;
+            }
+        });
     }
 }
