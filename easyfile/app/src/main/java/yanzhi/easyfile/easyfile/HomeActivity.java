@@ -10,6 +10,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import rx.Observable;
@@ -18,8 +23,11 @@ import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
+import yanzhi.easyfile.easyfile.Network.HttpClientConfig;
 import yanzhi.easyfile.easyfile.Network.NetworkManager;
 import yanzhi.easyfile.easyfile.Network.NetworkRequest;
+import yanzhi.easyfile.easyfile.util.DiskLruCache;
+import yanzhi.easyfile.easyfile.util.MathUtils;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -29,6 +37,10 @@ public class HomeActivity extends AppCompatActivity {
     TextView textView;
     @InjectView(R.id.download)
     Button downloadBt;
+    @InjectView(R.id.upload)
+    Button uploadBt;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,8 +49,39 @@ public class HomeActivity extends AppCompatActivity {
         String dirPath = Environment.getExternalStorageDirectory().getPath() + "/TempTestOne";
         //TestUtil.testOneRandomPathConsume(dirPath);
 
-
         downloadBt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    DiskLruCache diskLruCache = DiskLruCache.open(
+                            new File(Environment.getExternalStorageDirectory().getPath() + "/aMTest"),
+                            1,
+                            1,
+                            HttpClientConfig.DEFAULT_DISK_CACHE_SIZE);
+                    DiskLruCache.Editor editor = diskLruCache
+                            .edit(MathUtils.hashKeyForDisk("jfinal-1.8-manual.pdf"));
+                    OutputStream out = editor.newOutputStream(0);
+
+                    FileInputStream inputStream = new FileInputStream(Environment.getExternalStorageDirectory().getPath()+"/"+"jfinal-1.8-manual.pdf");
+                    int readLen = 0;
+                    byte[] buffer = new byte[HttpClientConfig.RECEIVE_BUFF_LEN_INTEGER];
+
+                    while((readLen = inputStream.read(buffer)) != -1) {
+                        out.write(buffer,0,readLen);
+                        Log.v("cyz","readlen " + readLen);
+                    }
+                    inputStream.close();
+
+                    out.flush();
+                    out.close();
+
+                    editor.commit();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        uploadBt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 new Thread(new Runnable() {

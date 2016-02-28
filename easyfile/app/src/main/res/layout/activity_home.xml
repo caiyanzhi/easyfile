@@ -12,7 +12,14 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:id="@+id/upload"
+        android:text="upload"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:id="@+id/download"
+        android:layout_below="@id/upload"
         android:text="download"/>
 
 </RelativeLayout>

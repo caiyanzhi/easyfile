@@ -1,5 +1,7 @@
 package yanzhi.easyfile.easyfile.util;
 
+import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.util.Log;
 
 import java.io.File;
@@ -149,5 +151,23 @@ public class TestUtil {
                 Log.v("cyz","end at " + i);
             }
         }).start();
+    }
+
+    public static String appVersionName = null;
+    public static String  getAppVersion(Activity activity) {
+        if (appVersionName == null) {
+            PackageManager manager = activity.getPackageManager();
+            try {
+                android.content.pm.PackageInfo info = manager.getPackageInfo(activity.getPackageName(), 0);
+                appVersionName = info.versionName;   //版本名
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (appVersionName == null) {
+            return "";
+        } else {
+            return appVersionName;
+        }
     }
 }
