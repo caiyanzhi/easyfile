@@ -1,7 +1,11 @@
 package yanzhi.easyfile.easyfile.Network;
 
+import android.os.Environment;
+
 import org.json.JSONObject;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -18,6 +22,12 @@ public class NetworkRequest {
 
     public NetworkRequest(){
         cookies = new HashMap<>();
+        fileList = new ArrayList<>();
+        fileList.add(new FileEntity(new File(Environment.getExternalStorageDirectory().getPath()+"/stack.txt"),"application/octet-stream","file1"));
+
+        fileList.add(new FileEntity(new File(Environment.getExternalStorageDirectory().getPath()+"/result_jfinal-1.8-manual.pdf"),"application/octet-stream","file2"));
+        params = new HashMap<>();
+        params.put("user","caiyanzhi");
         cookies.put("username2","cyz");
         try {
             JSONObject object = new JSONObject();
