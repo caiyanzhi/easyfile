@@ -3,6 +3,7 @@ package yanzhi.easyfile.easyfile.Network;
 import android.os.Environment;
 import android.util.Log;
 
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,57 +40,97 @@ public class NetworkManager {
 
         Request request;
         String paramsString = networkRequest.getParamJson();
-
+        Request.Builder requestBuilder;
         if (networkRequest.getHttpMethod() == NetworkRequest.HttpMethod.HttpMethod_POST && paramsString != null) {
             RequestBody requestBody = RequestBody.create(JSON,paramsString);
-            request = new Request.Builder()
+            requestBuilder = new Request.Builder()
                     .url(networkRequest.getUrl())
-                    .post(requestBody)
-                    .build();
+                    .post(requestBody);
         } else if (networkRequest.getHttpMethod() == NetworkRequest.HttpMethod.HttpMethod_MULTIPART) {
             RequestBody requestBody = getMultipartBuilderBody(networkRequest);
-            request = new Request.Builder()
+            requestBuilder = new Request.Builder()
                     .url(networkRequest.getUrl())
-                    .method("POST",requestBody)
-                    .build();
+                    .method("POST", requestBody);
         } else {
-            request = new Request.Builder()
-                    .url(networkRequest.getUrl())
-                    .build();
+            String url = getHttpGetUrl(networkRequest);
+            requestBuilder = new Request.Builder()
+                    .url(url);
         }
-
-        Log.v("cyz", "" + request.url());
+        addRequestHeader(networkRequest,requestBuilder);
+        request = requestBuilder.build();
+        Log.v("cyz", "http access : " + request.url());
 
         try {
             Response response = client.newCall(request).execute();
             if (response.isSuccessful()) {
                 Headers responseHeaders = response.headers();
-                long contentLen = response.body().contentLength();
-                Log.v("cyz","contentLen " + contentLen);
-                Log.v("cyz","ret " + response.body().string());
-                InputStream inputStream =  response.body().byteStream();
-                for (int i = 0; i < responseHeaders.size(); i++) {
-                    Log.v("cyz"," i " + i + " " + responseHeaders.name(i) + ":" + responseHeaders.value(i));
-                }
+                receiveHeader(networkRequest, responseHeaders);
 
-                byte[] buffer = new byte[HttpClientConfig.RECEIVE_BUFF_LEN_INTEGER];
+                receiveResponseData(networkRequest, response);
 
-                FileOutputStream outputStream = new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/教务部关于选派我校优秀本科生2016学年秋季学期赴加拿大阿尔伯塔大学、新加坡国立大学交流学习的通知.doc");
-                int readLen =-1;
-                int byteLen = 0;
-                while((readLen = inputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer,0, readLen);
-                    byteLen += readLen;
-                }
-                Log.v("cyz","byteLen " + byteLen);
-                outputStream.flush();
-                outputStream.close();
-                Log.v("cyz","download ok");
             } else {
                 throw new IOException("Unexpected code " + response);
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void addRequestHeader(NetworkRequest networkRequest, Request.Builder requestBuilder) {
+        if(networkRequest.getDownloadEntity() != null) {
+            requestBuilder.addHeader("Range", "bytes="
+                    + networkRequest.getDownloadEntity().getStartPoint()
+                    + "-" + (networkRequest.getDownloadEntity().getEndPoint()-1));
+        }
+    }
+
+    private static void receiveResponseData(NetworkRequest networkRequest, Response response) {
+        long contentLen = response.body().contentLength();
+        Log.v("cyz","total length " + contentLen);
+        byte[] buffer = new byte[HttpClientConfig.RECEIVE_BUFF_LEN_INTEGER];
+        InputStream inputStream = response.body().byteStream();
+        int readLen = -1;
+        FileOutputStream outputStream = null;
+        try {
+            DownloadEntity downloadEntity = networkRequest.getDownloadEntity();
+            if(downloadEntity.isSupportResume()) {
+                outputStream = new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/教务部关于选派我校优秀本科生2016学年秋季学期赴加拿大阿尔伯塔大学、新加坡国立大学交流学习的通知2.doc", true);
+            }else {
+                outputStream = new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/教务部关于选派我校优秀本科生2016学年秋季学期赴加拿大阿尔伯塔大学、新加坡国立大学交流学习的通知2.doc");
+            }
+
+            int byteLen = 0;
+
+            while((readLen = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer,0, readLen);
+                networkRequest.responseReceiveData(buffer,readLen, contentLen);
+                byteLen += readLen;
+            }
+            Log.v("cyz","receive byteLen " + byteLen);
+            Log.v("cyz","download ok");
+            outputStream.flush();
+            outputStream.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private static void receiveHeader(NetworkRequest request, Headers responseHeaders) {
+        HashMap<String, List<String>> headers = new HashMap<String, List<String>>();
+        for (int i = 0; i < responseHeaders.size(); i++) {
+            headers.put(responseHeaders.name(i),responseHeaders.values(responseHeaders.name(i)));
+        }
+        request.responseReceiveHeader(headers);
+    }
+
+    private static String getHttpGetUrl(NetworkRequest networkRequest) {
+        if(networkRequest.params != null) {
+            return networkRequest.getUrl() + "?" + networkRequest.getParamJson();
+        } else {
+            return networkRequest.getUrl();
         }
     }
 

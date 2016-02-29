@@ -23,6 +23,7 @@ import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
+import yanzhi.easyfile.easyfile.Network.DownloadEntity;
 import yanzhi.easyfile.easyfile.Network.HttpClientConfig;
 import yanzhi.easyfile.easyfile.Network.NetworkManager;
 import yanzhi.easyfile.easyfile.Network.NetworkRequest;
@@ -88,7 +89,10 @@ public class HomeActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         NetworkRequest request = new NetworkRequest();
-                        request.setHttpMethod(NetworkRequest.HttpMethod.HttpMethod_MULTIPART);
+                        request.setHttpMethod(NetworkRequest.HttpMethod.HttpMethod_GET);
+//                        DownloadEntity entity = new DownloadEntity(true,0,10000);
+                        DownloadEntity entity = new DownloadEntity(true,10000,35329);
+                        request.setDownloadEntity(entity);
                         NetworkManager.httpSend(request);
 //                        OkHttpClient client = new OkHttpClient();
 //                        Request request = new Request.Builder()
