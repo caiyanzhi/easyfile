@@ -82,6 +82,9 @@ public class NetworkManager {
                     + networkRequest.getDownloadEntity().getStartPoint()
                     + "-" + (networkRequest.getDownloadEntity().getEndPoint()-1));
         }
+        for(HashMap.Entry<String,String> entry : networkRequest.getRequestHeaders().entrySet()){
+            requestBuilder.addHeader(entry.getKey(), entry.getValue());
+        }
     }
 
     private static void receiveResponseData(NetworkRequest networkRequest, Response response) {

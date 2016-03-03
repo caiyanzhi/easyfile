@@ -943,11 +943,23 @@ public final class DiskLruCache implements Closeable {
         }
 
         public File getCleanFile(int i) {
-            return new File(directory, key + "." + i);
+            String firstDir = key.substring(0,2);
+            String secondDir = key.substring(2,4);
+            File hashDir = new File(directory+"/"+firstDir+"/"+secondDir);
+            if(!hashDir.exists()) {
+                hashDir.mkdirs();
+            }
+            return new File(hashDir, key + "." + i);
         }
 
         public File getDirtyFile(int i) {
-            return new File(directory, key + "." + i + ".tmp");
+            String firstDir = key.substring(0,2);
+            String secondDir = key.substring(2,4);
+            File hashDir = new File(directory+"/"+firstDir+"/"+secondDir);
+            if(!hashDir.exists()) {
+                hashDir.mkdirs();
+            }
+            return new File(hashDir, key + "." + i + ".tmp");
         }
     }
 }

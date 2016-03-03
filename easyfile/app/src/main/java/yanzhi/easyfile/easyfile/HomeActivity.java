@@ -71,6 +71,7 @@ public class HomeActivity extends AppCompatActivity {
                         out.write(buffer,0,readLen);
                         Log.v("cyz","readlen " + readLen);
                     }
+
                     inputStream.close();
 
                     out.flush();

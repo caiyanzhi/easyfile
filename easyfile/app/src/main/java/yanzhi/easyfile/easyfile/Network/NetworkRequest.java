@@ -23,6 +23,7 @@ public class NetworkRequest {
     public HashMap<String,String> params;
     private boolean isDownload;
     private DownloadEntity downloadEntity;
+    private HashMap<String, String> requestHeaders;
 
     public DownloadEntity getDownloadEntity() {
         return downloadEntity;
@@ -49,6 +50,16 @@ public class NetworkRequest {
         }
     }
 
+    /**
+     * @return the requestHeaderDictionary
+     */
+    public HashMap<String, String> getRequestHeaders() {
+        if (null == requestHeaders) {
+            requestHeaders = new HashMap<String, String>();
+        }
+        return requestHeaders;
+    }
+    
     public String getParamJson(){
         if(httpMethod == HttpMethod.HttpMethod_GET) {
             paramJson = "";
