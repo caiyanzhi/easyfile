@@ -16,6 +16,8 @@
 
 package yanzhi.easyfile.easyfile.util;
 
+import android.util.Log;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.Closeable;
@@ -110,7 +112,7 @@ public final class DiskLruCache implements Closeable {
 
     private static final Charset UTF_8 = Charset.forName("UTF-8");
     private static final int IO_BUFFER_SIZE = 8 * 1024;
-
+    private static final int DISK_CACHE_INDEX = 0;
     /*
      * This cache uses a journal file named "journal". A typical journal file
      * looks like this:
@@ -465,6 +467,74 @@ public final class DiskLruCache implements Closeable {
         }
     }
 
+    public boolean isExist(String key) {
+        checkNotClosed();
+        validateKey(key);
+        Entry entry = lruEntries.get(key);
+        if (entry == null) {
+            return false;
+        }
+
+        if (!entry.readable) {
+            return false;
+        }
+        return entry.getCleanFile(0).exists();
+    }
+
+    public String getFilePath(String key) {
+        checkNotClosed();
+        validateKey(key);
+        Entry entry = lruEntries.get(key);
+
+        if (entry == null || !entry.readable) {
+            return "";
+        } else if (entry.getCleanFile(0).exists()) {
+            return entry.getCleanFile(0).getAbsolutePath();
+        } else {
+            return "";
+        }
+    }
+
+    /**
+     * 为了不用Snapshot
+     * @param key
+     * @return
+     * @throws IOException
+     */
+    public synchronized File getReadableFile(String key) {
+        checkNotClosed();
+        validateKey(key);
+        Entry entry = lruEntries.get(key);
+        if (entry == null) {
+            return null;
+        }
+
+        if (!entry.readable) {
+            return null;
+        }
+
+        File file = entry.getCleanFile(DISK_CACHE_INDEX);
+        if (file.exists()) {
+            try {
+                journalWriter.append(READ + ' ' + key + '\n');
+                redundantOpCount++;
+                if (journalRebuildRequired()) {
+                    executorService.submit(cleanupCallable);
+                }
+            } catch (IOException e) {
+
+            }
+            return file;
+        } else {
+            lruEntries.remove(key);
+            try {
+                journalWriter.write(REMOVE + ' ' + entry.key + '\n');
+            } catch (IOException e) {}
+            return null;
+        }
+    }
+
+
     /**
      * Returns a snapshot of the entry named {@code key}, or null if it doesn't
      * exist is not currently readable. If a value is returned, it is moved to
@@ -588,6 +658,7 @@ public final class DiskLruCache implements Closeable {
                     long newLength = clean.length();
                     entry.lengths[i] = newLength;
                     size = size - oldLength + newLength;
+                    Log.v("cyz", " oldLenth " + oldLength + " new " + newLength + " total " + size);
                 }
             } else {
                 deleteIfExists(dirty);
@@ -817,6 +888,22 @@ public final class DiskLruCache implements Closeable {
                     throw new IllegalStateException();
                 }
                 return new FaultHidingOutputStream(new FileOutputStream(entry.getDirtyFile(index)));
+            }
+        }
+
+        /**
+         * Returns a buffered output stream to write the value at
+         * {@code index}. If the underlying output stream encounters errors
+         * when writing to the filesystem, this edit will be aborted when
+         * {@link #commit} is called. The returned output stream does not throw
+         * IOExceptions.
+         */
+        public OutputStream getAppendOutputStream(int index) throws IOException {
+            synchronized (DiskLruCache.this) {
+                if (entry.currentEditor != this) {
+                    throw new IllegalStateException();
+                }
+                return new FaultHidingOutputStream(new FileOutputStream(entry.getCleanFile(index),true));
             }
         }
 

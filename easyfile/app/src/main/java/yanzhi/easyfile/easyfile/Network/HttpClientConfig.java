@@ -16,5 +16,5 @@ public class HttpClientConfig {
     /**
      * 接受的文件最大的字符数
      */
-    public static final int DEFAULT_DISK_CACHE_SIZE = 1024 * 1024 * 300; // 300MB
+    public static final int DEFAULT_DISK_CACHE_SIZE = 1024 * 1024 * 3; // 300MB
 }

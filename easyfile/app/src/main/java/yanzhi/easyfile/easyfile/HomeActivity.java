@@ -60,7 +60,8 @@ public class HomeActivity extends AppCompatActivity {
                             1,
                             HttpClientConfig.DEFAULT_DISK_CACHE_SIZE);
                     DiskLruCache.Editor editor = diskLruCache
-                            .edit(MathUtils.hashKeyForDisk("jfinal-1.8-manual.pdf"));
+                            .edit(MathUtils.hashKeyForDisk("hsfdfsfdas342424hDir"));//picforcnn.jpg
+                   //jfinal-1.8-manual.pdf
                     OutputStream out = editor.newOutputStream(0);
 
                     FileInputStream inputStream = new FileInputStream(Environment.getExternalStorageDirectory().getPath()+"/"+"jfinal-1.8-manual.pdf");
@@ -78,6 +79,7 @@ public class HomeActivity extends AppCompatActivity {
                     out.close();
 
                     editor.commit();
+                    diskLruCache.flush();//写journal文件
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
