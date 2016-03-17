@@ -10,7 +10,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -23,12 +22,10 @@ import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
-import yanzhi.easyfile.easyfile.Network.DownloadEntity;
 import yanzhi.easyfile.easyfile.Network.HttpClientConfig;
-import yanzhi.easyfile.easyfile.Network.NetworkManager;
-import yanzhi.easyfile.easyfile.Network.NetworkRequest;
 import yanzhi.easyfile.easyfile.util.DiskLruCache;
 import yanzhi.easyfile.easyfile.util.MathUtils;
+import yanzhi.easyfile.easyfile.util.TestUtil;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -54,13 +51,15 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 try {
-                    DiskLruCache diskLruCache = DiskLruCache.open(
-                            new File(Environment.getExternalStorageDirectory().getPath() + "/aMTest"),
-                            1,
-                            1,
-                            HttpClientConfig.DEFAULT_DISK_CACHE_SIZE);
-                    DiskLruCache.Editor editor = diskLruCache
-                            .edit(MathUtils.hashKeyForDisk("hsfdfsfdas342424hDir"));//picforcnn.jpg
+                    DiskLruCacheManager manager = DiskLruCacheManager.getInstance(HomeActivity.this);
+
+//                    DiskLruCache diskLruCache = DiskLruCache.open(
+//                            new File(Environment.getExternalStorageDirectory().getPath() + "/aMTest"),
+//                            1,
+//                            1,
+//                            HttpClientConfig.DEFAULT_DISK_CACHE_SIZE);
+                    DiskLruCache.Editor editor = manager.getDownloadDiskCache().getEditor(MathUtils.hashKeyForDisk("jfinalhsfdfsfdas342424hDir"));
+//                            diskLruCache.edit(MathUtils.hashKeyForDisk("hsfdfsfdas342424hDir"));//picforcnn.jpg
                    //jfinal-1.8-manual.pdf
                     OutputStream out = editor.newOutputStream(0);
 
@@ -79,24 +78,26 @@ public class HomeActivity extends AppCompatActivity {
                     out.close();
 
                     editor.commit();
-                    diskLruCache.flush();//写journal文件
+                    manager.getDownloadDiskCache().flush();//写journal文件
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         });
+
         uploadBt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        NetworkRequest request = new NetworkRequest();
-                        request.setHttpMethod(NetworkRequest.HttpMethod.HttpMethod_GET);
-//                        DownloadEntity entity = new DownloadEntity(true,0,10000);
-                        DownloadEntity entity = new DownloadEntity(true,10000,35329);
-                        request.setDownloadEntity(entity);
-                        NetworkManager.httpSend(request);
+                        TestUtil.testRandomPathConsume(Environment.getExternalStorageDirectory()+"/aTwoTest");
+//                        NetworkRequest request = new NetworkRequest();
+//                        request.setHttpMethod(NetworkRequest.HttpMethod.HttpMethod_GET);
+////                        DownloadEntity entity = new DownloadEntity(true,0,10000);
+//                        DownloadEntity entity = new DownloadEntity(true,10000,35329);
+//                        request.setDownloadEntity(entity);
+//                        NetworkUtil.httpSend(request);
 //                        OkHttpClient client = new OkHttpClient();
 //                        Request request = new Request.Builder()
 //                                .url("http://sdcs.sysu.edu.cn/wp-content/uploads/2016/02/教务部关于选派我校优秀本科生2016学年秋季学期赴加拿大阿尔伯塔大学、新加坡国立大学交流学习的通知.doc")

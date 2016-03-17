@@ -72,7 +72,7 @@ public class RandomPathActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //为了避免子线程优先级太低被阻塞影响实验结果，所以放在UI线程中访问文件，比较耗时
-                for(int i = 0; i < 31366; i+= 1) {
+                for(int i = 0; i < 31366; i+= 30) {
                     long start = System.currentTimeMillis();
                     File file = new File(path + "/" + i + ".txt");
                     if(file.exists()) {

@@ -39,7 +39,7 @@ public class MathUtils {
         return hash;
     }
 
-    private static String bytesToHexString(byte[] bytes) {
+    public static String bytesToHexString(byte[] bytes) {
         // http://stackoverflow.com/questions/332079
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < bytes.length; i++) {
@@ -54,6 +54,7 @@ public class MathUtils {
 
     public static String hashKeyForDisk(String key) {
         String cacheKey;
+        key.hashCode();
         try {
             final MessageDigest mDigest = MessageDigest.getInstance("MD5");
             mDigest.update(key.getBytes());

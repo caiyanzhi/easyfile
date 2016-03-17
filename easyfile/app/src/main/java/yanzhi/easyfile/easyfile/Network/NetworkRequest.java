@@ -24,6 +24,7 @@ public class NetworkRequest {
     private boolean isDownload;
     private DownloadEntity downloadEntity;
     private HashMap<String, String> requestHeaders;
+    public int priorityInteger = 0; // 优先级,不设置就FIFO
 
     public DownloadEntity getDownloadEntity() {
         return downloadEntity;
@@ -104,23 +105,22 @@ public class NetworkRequest {
         HttpMethod_GET, HttpMethod_POST, HttpMethod_MULTIPART;
     }
 
-    public void responseReceiveHeader(Map<String, List<String>> headers){
-
+    public interface NetworkResponse{
+        //对于返回头部的处理
+        void responseReceiveHeader(Map<String, List<String>> headers);
+        void responseSuccess();
+        void responseComplete();
+        void responseError();
+        void responseReceiveData(byte[] dataRead, int readLen, long totalBytesRead);
     }
 
-    public void responseSuccess(){
+    private NetworkResponse networkResponse;
 
+    public void setNetworkResponse(NetworkResponse networkResponse) {
+        this.networkResponse = networkResponse;
     }
 
-    public void responseComplete(){
-
-    }
-
-    public void responseError(){
-
-    }
-
-    public void responseReceiveData(byte[] dataRead, int readLen, long totalBytesRead){
-
+    public NetworkResponse getNetworkResponse(){
+        return  networkResponse;
     }
 }

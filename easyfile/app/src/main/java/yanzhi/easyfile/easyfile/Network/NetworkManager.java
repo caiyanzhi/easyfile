@@ -1,178 +1,96 @@
 package yanzhi.easyfile.easyfile.Network;
 
-import android.os.Environment;
-import android.util.Log;
+import java.util.Comparator;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-import okhttp3.Cookie;
-import okhttp3.CookieJar;
-import okhttp3.Headers;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import yanzhi.easyfile.easyfile.util.HelperUtil;
 
 /**
- * @desc Created by yanzhi on 2016-02-27.
+ * @desc Created by yanzhi on 2016-03-17.
  */
 public class NetworkManager {
-    public static final MediaType JSON
-            = MediaType.parse("application/json; charset=utf-8");
-    private static final MediaType MEDIA_TYPE_PNG = MediaType.parse("application/octet-stream");
+    private static final int MAX_LOADFILE_THREAD_CNT = 10;
+    private static final int KEEP_ALIVE_TIME = 120;
+    private final ThreadPoolExecutor threadPoolExecutor;
+    private static final int QUEUE_INIT_LENGTH = 20;
+    private static NetworkManager instance;
+    private int corePoolSize;
+    private int maxPoolSize;
 
-    public static void httpSend(NetworkRequest networkRequest){
-        OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
+    public NetworkManager(int corePoolSize,int maxPoolSize){
+        this.corePoolSize = corePoolSize;
+        this.maxPoolSize = maxPoolSize;
+        threadPoolExecutor = new ThreadPoolExecutor(corePoolSize,
+                maxPoolSize,
+                KEEP_ALIVE_TIME,
+                TimeUnit.SECONDS,
+                new PriorityBlockingQueue<Runnable>(QUEUE_INIT_LENGTH,
+                        new Comparator<Runnable>() {
+                            @Override
+                            public int compare(Runnable lhs, Runnable rhs) {
+                                return ((Task) lhs).request.priorityInteger
+                                        - ((Task) rhs).request.priorityInteger;
+                            }
+                        })
+                );
+    }
 
-        //设置cookies
-        setCookies(builder,networkRequest);
+    public class Task implements Runnable {
 
-        OkHttpClient client = builder.build();
+        public final NetworkRequest request;
 
-        Request request;
-        String paramsString = networkRequest.getParamJson();
-        Request.Builder requestBuilder;
-        if (networkRequest.getHttpMethod() == NetworkRequest.HttpMethod.HttpMethod_POST && paramsString != null) {
-            RequestBody requestBody = RequestBody.create(JSON,paramsString);
-            requestBuilder = new Request.Builder()
-                    .url(networkRequest.getUrl())
-                    .post(requestBody);
-        } else if (networkRequest.getHttpMethod() == NetworkRequest.HttpMethod.HttpMethod_MULTIPART) {
-            RequestBody requestBody = getMultipartBuilderBody(networkRequest);
-            requestBuilder = new Request.Builder()
-                    .url(networkRequest.getUrl())
-                    .method("POST", requestBody);
-        } else {
-            String url = getHttpGetUrl(networkRequest);
-            requestBuilder = new Request.Builder()
-                    .url(url);
+        Task(NetworkRequest request) {
+            HelperUtil.validateNull(request);
+            this.request = request;
         }
-        addRequestHeader(networkRequest,requestBuilder);
-        request = requestBuilder.build();
-        Log.v("cyz", "http access : " + request.url());
 
-        try {
-            Response response = client.newCall(request).execute();
-            if (response.isSuccessful()) {
-                Headers responseHeaders = response.headers();
-                receiveHeader(networkRequest, responseHeaders);
-
-                receiveResponseData(networkRequest, response);
-
-            } else {
-                throw new IOException("Unexpected code " + response);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+        @Override
+        public void run() {
+            NetworkUtil.httpSend(request);
         }
     }
 
-    private static void addRequestHeader(NetworkRequest networkRequest, Request.Builder requestBuilder) {
-        if(networkRequest.getDownloadEntity() != null) {
-            requestBuilder.addHeader("Range", "bytes="
-                    + networkRequest.getDownloadEntity().getStartPoint()
-                    + "-" + (networkRequest.getDownloadEntity().getEndPoint()-1));
+    //默认的网络管理者
+    public synchronized static NetworkManager getInstance(){
+        if (instance == null) {
+            instance = new NetworkManager(MAX_LOADFILE_THREAD_CNT,
+                    MAX_LOADFILE_THREAD_CNT);
         }
-        for(HashMap.Entry<String,String> entry : networkRequest.getRequestHeaders().entrySet()){
-            requestBuilder.addHeader(entry.getKey(), entry.getValue());
+        return instance;
+    }
+
+    //发送网络请求
+    public void sendRequest(NetworkRequest request){
+        Task task = new Task(request);
+        this.threadPoolExecutor.execute(task);
+    }
+
+    /**
+     * 释放NetworkManager线程池
+     */
+    public void shutdown() {
+        threadPoolExecutor.shutdown();
+    }
+
+    /**
+     * 立刻释放线程池里的所有任务
+     */
+    public void removeWorkQueueTask() {
+        PriorityBlockingQueue<Runnable> queue = (PriorityBlockingQueue<Runnable>) threadPoolExecutor.getQueue();
+        Runnable[] runnables = queue.toArray(new Runnable[0]);
+        for (Runnable r : runnables) {
+            threadPoolExecutor.remove(r);
         }
     }
 
-    private static void receiveResponseData(NetworkRequest networkRequest, Response response) {
-        long contentLen = response.body().contentLength();
-        Log.v("cyz","total length " + contentLen);
-        byte[] buffer = new byte[HttpClientConfig.RECEIVE_BUFF_LEN_INTEGER];
-        InputStream inputStream = response.body().byteStream();
-        int readLen = -1;
-        FileOutputStream outputStream = null;
-        try {
-            DownloadEntity downloadEntity = networkRequest.getDownloadEntity();
-            if(downloadEntity.isSupportResume()) {
-                outputStream = new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/教务部关于选派我校优秀本科生2016学年秋季学期赴加拿大阿尔伯塔大学、新加坡国立大学交流学习的通知2.doc", true);
-            }else {
-                outputStream = new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/教务部关于选派我校优秀本科生2016学年秋季学期赴加拿大阿尔伯塔大学、新加坡国立大学交流学习的通知2.doc");
-            }
-
-            int byteLen = 0;
-
-            while((readLen = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer,0, readLen);
-                networkRequest.responseReceiveData(buffer,readLen, contentLen);
-                byteLen += readLen;
-            }
-            Log.v("cyz","receive byteLen " + byteLen);
-            Log.v("cyz","download ok");
-            outputStream.flush();
-            outputStream.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    /**
+     * 是否还有空闲的线程
+     * @return
+     */
+    public boolean hasIdleThread() {
+        return threadPoolExecutor.getActiveCount() < corePoolSize;
     }
 
-
-    private static void receiveHeader(NetworkRequest request, Headers responseHeaders) {
-        HashMap<String, List<String>> headers = new HashMap<String, List<String>>();
-        for (int i = 0; i < responseHeaders.size(); i++) {
-            headers.put(responseHeaders.name(i),responseHeaders.values(responseHeaders.name(i)));
-        }
-        request.responseReceiveHeader(headers);
-    }
-
-    private static String getHttpGetUrl(NetworkRequest networkRequest) {
-        if(networkRequest.params != null) {
-            return networkRequest.getUrl() + "?" + networkRequest.getParamJson();
-        } else {
-            return networkRequest.getUrl();
-        }
-    }
-
-    private static MultipartBody getMultipartBuilderBody(NetworkRequest networkRequest) {
-        MultipartBody.Builder builder = new MultipartBody.Builder().setType(MultipartBody.FORM);
-        if(networkRequest.params != null) {
-            for(HashMap.Entry<String,String> entry : networkRequest.params.entrySet()) {
-                builder.addFormDataPart(entry.getKey(),entry.getValue());
-            }
-        }
-        if(networkRequest.fileList != null) {
-            for(FileEntity fileEntity : networkRequest.fileList) {
-                builder.addFormDataPart(fileEntity.getFileNameString(), fileEntity.getFile().getName(),
-                        RequestBody.create(MediaType.parse(fileEntity.getContentType()), fileEntity.getFile()));
-            }
-        }
-        return builder.build();
-    }
-
-    private static void setCookies(OkHttpClient.Builder builder, final NetworkRequest networkRequest) {
-        builder.cookieJar(new CookieJar() {
-            @Override
-            public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
-                Log.v("cyz","save cookie from " + url + " cookies size " + cookies.size());
-            }
-
-            @Override
-            public List<Cookie> loadForRequest(HttpUrl url) {
-                ArrayList<Cookie> cookies = new ArrayList<Cookie>();
-                if(networkRequest.cookies == null) {
-                    return cookies;
-                }
-
-                for(HashMap.Entry<String,String> entry : networkRequest.cookies.entrySet()) {
-                    cookies.add(Cookie.parse(url,entry.getKey()+"="+entry.getValue()));
-                }
-
-                return cookies;
-            }
-        });
-    }
 }

@@ -65,18 +65,20 @@ public class TestUtil {
      * @param dirPath
      */
     public static void testTwoRandomPathCreateFile(String dirPath){
+        Log.v("cyz","begin test TwoRandomPathConsume");
         for (int i = 0; i < 31366; i++) {
-            String str = "" + i + ".txt";
-            String tmpDir = MathUtils.hashValue(str);
+            String str = "" + i;
+            String tmpDir = MathUtils.hashKeyForDisk(str);
             String firstDir = tmpDir.substring(0, 2);
             String secondDir = tmpDir.substring(2, 4);
             File file = new File(dirPath + "/" + firstDir + "/" + secondDir);
             try {
                 if (!file.exists()) {
                     file.mkdirs();
-                    File file1 = new File(file.getPath() + "/" + str);
-                    file1.createNewFile();
                 }
+
+                File file1 = new File(file.getPath() + "/" + str);
+                file1.createNewFile();
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.v("cyz", "e = " + e.getMessage() + " filename " + str + " i " + i);
@@ -86,22 +88,25 @@ public class TestUtil {
     }
 
     public static void testRandomPathConsume(String dirPath){
-        for(int i = 0; i < 31366; i++) {
-            String str = "" + i + ".txt";
+        Log.v("cyz","start test testRandomPathConsume");
+        for(int i = 0; i < 31366; i+=30) {
+            String str = "" + i;
+            String tmpDir = MathUtils.hashKeyForDisk(str);
             long start = System.currentTimeMillis();
-            String tmpDir = MathUtils.hashValue(str);
             String firstDir = tmpDir.substring(0,2);
             String secondDir = tmpDir.substring(2,4);
-            File file = new File(dirPath+"/" + firstDir + "/" + secondDir);
+
+            File file = new File(dirPath+"/" + firstDir + "/" + secondDir,str);
             if(file.exists()) {
                 long spend = System.currentTimeMillis() - start;
-                Log.v("spend", "find file i " + i + " spend " + spend);
+                Log.v("spend", "" + i + " " + spend);
             } else {
                 long spend = System.currentTimeMillis() - start;
                 Log.v("cyz","spend not " + spend+" " + i);
                 break;
             }
         }
+        Log.v("cyz","finish test testRandomPathConsume");
     }
 
     /***********************************************************************
