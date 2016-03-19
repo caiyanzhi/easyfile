@@ -1,4 +1,4 @@
-package yanzhi.easyfile.easyfile.util;
+package yanzhi.easyfile.easyfile.Network;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -110,4 +110,16 @@ public class FileUtil {
             }
         }
     }
+
+    public static File renameFile(File srcFile, File destFile) {
+        if (srcFile == null || destFile == null) return null;
+
+        try {
+            srcFile.renameTo(destFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return destFile;
+    }
+
 }

@@ -11,10 +11,10 @@ import yanzhi.easyfile.easyfile.util.HelperUtil;
  * @desc Created by yanzhi on 2016-03-17.
  */
 public class NetworkManager {
-    private static final int MAX_LOADFILE_THREAD_CNT = 10;
-    private static final int KEEP_ALIVE_TIME = 120;
+    public static final int MAX_DEFAULT_THREAD_CNT = 10;
+    public static final int DEFAULT_KEEP_ALIVE_TIME = 120;
     private final ThreadPoolExecutor threadPoolExecutor;
-    private static final int QUEUE_INIT_LENGTH = 20;
+    public static final int QUEUE_DEFAULT_INIT_LENGTH = 20;
     private static NetworkManager instance;
     private int corePoolSize;
     private int maxPoolSize;
@@ -24,9 +24,9 @@ public class NetworkManager {
         this.maxPoolSize = maxPoolSize;
         threadPoolExecutor = new ThreadPoolExecutor(corePoolSize,
                 maxPoolSize,
-                KEEP_ALIVE_TIME,
+                DEFAULT_KEEP_ALIVE_TIME,
                 TimeUnit.SECONDS,
-                new PriorityBlockingQueue<Runnable>(QUEUE_INIT_LENGTH,
+                new PriorityBlockingQueue<Runnable>(QUEUE_DEFAULT_INIT_LENGTH,
                         new Comparator<Runnable>() {
                             @Override
                             public int compare(Runnable lhs, Runnable rhs) {
@@ -55,8 +55,8 @@ public class NetworkManager {
     //默认的网络管理者
     public synchronized static NetworkManager getInstance(){
         if (instance == null) {
-            instance = new NetworkManager(MAX_LOADFILE_THREAD_CNT,
-                    MAX_LOADFILE_THREAD_CNT);
+            instance = new NetworkManager(MAX_DEFAULT_THREAD_CNT,
+                    DEFAULT_KEEP_ALIVE_TIME);
         }
         return instance;
     }

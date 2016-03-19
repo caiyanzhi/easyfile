@@ -1,10 +1,8 @@
 package yanzhi.easyfile.easyfile.Network;
 
-import android.os.Environment;
 import android.util.Log;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -29,6 +27,10 @@ public class NetworkUtil {
     public static final MediaType JSON
             = MediaType.parse("application/json; charset=utf-8");
     private static final MediaType MEDIA_TYPE_PNG = MediaType.parse("application/octet-stream");
+
+    public enum ResponseType {
+        ResponseType_TEXT, ResponseType_BINARY;
+    }
 
     public static void httpSend(NetworkRequest networkRequest){
         OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
@@ -65,9 +67,7 @@ public class NetworkUtil {
             if (response.isSuccessful()) {
                 Headers responseHeaders = response.headers();
                 receiveHeader(networkRequest, responseHeaders);
-
-                receiveResponseData(networkRequest, response);
-
+                handleResponse(networkRequest, response);
             } else {
                 throw new IOException("Unexpected code " + response);
             }
@@ -87,48 +87,50 @@ public class NetworkUtil {
         }
     }
 
-    private static void receiveResponseData(NetworkRequest networkRequest, Response response) {
-        NetworkRequest.NetworkResponse networkResponse = networkRequest.getNetworkResponse();
-        if(networkResponse == null) {
+    private static void handleResponse(NetworkRequest networkRequest, Response response) {
+        NetworkRequest.NetworkResponseHandler networkResponseHandler = networkRequest.getNetworkResponse();
+        if(networkResponseHandler == null) {
             return;
         }
 
+        boolean isDownload = networkRequest.isDownload();
         long contentLen = response.body().contentLength();
+        MediaType contentType = response.body().contentType();
+
         Log.v("cyz","total length " + contentLen);
         byte[] buffer = new byte[HttpClientConfig.RECEIVE_BUFF_LEN_INTEGER];
         InputStream inputStream = response.body().byteStream();
-        int readLen = -1;
-        FileOutputStream outputStream = null;
-        try {
-            DownloadEntity downloadEntity = networkRequest.getDownloadEntity();
-            if(downloadEntity.isSupportResume()) {
-                outputStream = new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/教务部关于选派我校优秀本科生2016学年秋季学期赴加拿大阿尔伯塔大学、新加坡国立大学交流学习的通知2.doc", true);
-            }else {
-                outputStream = new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/教务部关于选派我校优秀本科生2016学年秋季学期赴加拿大阿尔伯塔大学、新加坡国立大学交流学习的通知2.doc");
-            }
 
+        ByteArrayOutputStream totalByteBuffer = new ByteArrayOutputStream();
+        int readLen = -1;
+        try {
             int byteLen = 0;
 
             while((readLen = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer,0, readLen);
-                networkResponse.responseReceiveData(buffer,readLen, contentLen);
-                byteLen += readLen;
+                networkResponseHandler.responseReceiveData(buffer, readLen, contentLen);
+                if(contentType.type().startsWith("text")
+                        || (contentType.type().equalsIgnoreCase("application") && contentType.subtype().equalsIgnoreCase("json"))){
+                    totalByteBuffer.write(buffer,0,readLen);
+                    byteLen += readLen;
+                }
             }
 
+            if(!isDownload && totalByteBuffer != null) {
+                byte[] resultBytes = totalByteBuffer.toByteArray();
+                networkResponseHandler.responseSuccess(new String(resultBytes, 0, byteLen,
+                        HttpClientConfig.CHAR_SET));
+            }
             Log.v("cyz","receive byteLen " + byteLen);
-            Log.v("cyz","download ok");
-            outputStream.flush();
-            outputStream.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
+            networkResponseHandler.responseError(e.getMessage());
             e.printStackTrace();
         }
+        networkResponseHandler.responseComplete();
     }
 
 
     private static void receiveHeader(NetworkRequest request, Headers responseHeaders) {
-        NetworkRequest.NetworkResponse networkResponse = request.getNetworkResponse();
+        NetworkRequest.NetworkResponseHandler networkResponse = request.getNetworkResponse();
         if(networkResponse == null) {
             return;
         }

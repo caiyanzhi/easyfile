@@ -1,4 +1,4 @@
-package yanzhi.easyfile.easyfile.util;
+package yanzhi.easyfile.testproject1;
 
 import android.app.Activity;
 import android.content.pm.PackageManager;
@@ -87,7 +87,7 @@ public class TestUtil {
     }
 
 
-    public static void testRandomPathConsume(String dirPath){
+    public static void testTwoRandomPathConsume(String dirPath){
         Log.v("cyz","start test testRandomPathConsume");
         for(int i = 0; i < 31366; i+=30) {
             String str = "" + i;
@@ -132,30 +132,29 @@ public class TestUtil {
     }
 
     public static void testCreateNormalDirFile(final String dirPath){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
+        File dirFile = new File(dirPath);
+        if (!dirFile.exists()) {
+            dirFile.mkdirs();
+        }
 
-                Log.v("cyz","start testCreateNormalDirFile");
-                for(int i = 0; i < 31366; i+= 1) {
-                    try {
-                        File file = new File(dirPath + "/" + i + ".txt");
-                        file.createNewFile();
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                        Log.e("cyz", "FileNotFoundException" + e.getMessage());
-                        Log.e("cyz", "FileNotFoundException" + i);
-                        break;
-                    } catch (IOException e) {
-                        Log.e("cyz","ioException" + e.getMessage());
-                        Log.e("cyz", "FileNotFoundException" + i);
-                        break;
-                    }
-                }
-
-                Log.v("cyz","finish testCreateNormalDirFile");
+        Log.v("cyz","start testCreateNormalDirFile");
+        for(int i = 1; i < 31366; i+= 1) {
+            try {
+                File file = new File(dirPath + "/" + i + ".txt");
+                file.createNewFile();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                Log.e("cyz", "FileNotFoundException" + e.getMessage());
+                Log.e("cyz", "FileNotFoundException" + i);
+                break;
+            } catch (IOException e) {
+                Log.e("cyz","ioException" + e.getMessage());
+                Log.e("cyz", "FileNotFoundException" + i);
+                break;
             }
-        }).start();
+        }
+
+        Log.v("cyz","finish testCreateNormalDirFile");
     }
 
     public static String appVersionName = null;

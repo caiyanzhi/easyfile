@@ -16,8 +16,6 @@
 
 package yanzhi.easyfile.easyfile.util;
 
-import android.util.Log;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.Closeable;
@@ -112,7 +110,7 @@ public final class DiskLruCache implements Closeable {
 
     private static final Charset UTF_8 = Charset.forName("UTF-8");
     private static final int IO_BUFFER_SIZE = 8 * 1024;
-    private static final int DISK_CACHE_INDEX = 0;
+    public static final int DISK_CACHE_INDEX = 0;
     /*
      * This cache uses a journal file named "journal". A typical journal file
      * looks like this:
@@ -534,6 +532,31 @@ public final class DiskLruCache implements Closeable {
         }
     }
 
+    //获取没被删除的临时文件
+    public synchronized File getDirtyFile(String key) {
+        checkNotClosed();
+        validateKey(key);
+        Entry entry = lruEntries.get(key);
+        if (entry == null) {
+            return null;
+        }
+
+        if (entry.readable) {
+            return null;
+        }
+
+        File file = entry.getDirtyFile(DISK_CACHE_INDEX);
+        if (file.exists()) {
+            return file;
+        } else {
+            lruEntries.remove(key);
+            try {
+                journalWriter.write(REMOVE + ' ' + entry.key + '\n');
+            } catch (IOException e) {}
+            return null;
+        }
+    }
+
 
     /**
      * Returns a snapshot of the entry named {@code key}, or null if it doesn't
@@ -658,7 +681,6 @@ public final class DiskLruCache implements Closeable {
                     long newLength = clean.length();
                     entry.lengths[i] = newLength;
                     size = size - oldLength + newLength;
-                    Log.v("cyz", " oldLenth " + oldLength + " new " + newLength + " total " + size);
                 }
             } else {
                 deleteIfExists(dirty);
@@ -892,6 +914,28 @@ public final class DiskLruCache implements Closeable {
         }
 
         /**
+         * 支持续写，用于续传
+         * @param index
+         * @param append true，支持续写
+         * @return
+         * @throws IOException
+         */
+        public OutputStream newOutputStream(int index, boolean append) throws IOException {
+            synchronized (DiskLruCache.this) {
+                File dirtyFile = entry.getDirtyFile(index);
+                File cleanFile = entry.getCleanFile(index);
+                if (append) {
+                    if (!dirtyFile.exists() && cleanFile.exists()) {
+                        //这里保守采用copy，不过为了性能，采用rename
+                        cleanFile.renameTo(dirtyFile);
+                    }
+                }
+                return new FaultHidingOutputStream(new FileOutputStream(dirtyFile, append));
+            }
+        }
+
+
+        /**
          * Returns a buffered output stream to write the value at
          * {@code index}. If the underlying output stream encounters errors
          * when writing to the filesystem, this edit will be aborted when
@@ -905,6 +949,10 @@ public final class DiskLruCache implements Closeable {
                 }
                 return new FaultHidingOutputStream(new FileOutputStream(entry.getCleanFile(index),true));
             }
+        }
+
+        public File getFile(int index, boolean isTemp) {
+            return isTemp ? entry.getDirtyFile(index) : entry.getCleanFile(index);
         }
 
         /**

@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -22,10 +23,10 @@ import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
+import yanzhi.easyfile.easyfile.Network.FileLoader;
 import yanzhi.easyfile.easyfile.Network.HttpClientConfig;
 import yanzhi.easyfile.easyfile.util.DiskLruCache;
 import yanzhi.easyfile.easyfile.util.MathUtils;
-import yanzhi.easyfile.easyfile.util.TestUtil;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -91,8 +92,69 @@ public class HomeActivity extends AppCompatActivity {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        TestUtil.testRandomPathConsume(Environment.getExternalStorageDirectory()+"/aTwoTest");
-//                        NetworkRequest request = new NetworkRequest();
+//                        TestUtil.testRandomPathConsume(Environment.getExternalStorageDirectory()+"/aTwoTest");
+                        final String url = "http://sdcs.sysu.edu.cn/wp-content/uploads/2016/02/教务部关于选派我校优秀本科生2016学年秋季学期赴加拿大阿尔伯塔大学、新加坡国立大学交流学习的通知.doc";
+                        final FileLoader fileLoader = FileLoader.getInstance(HomeActivity.this);
+                        fileLoader.loadFile(url, true, new Subscriber<Long>() {
+                            @Override
+                            public void onCompleted() {
+                                Log.v("cyz","onCompleted ");
+                                File file = fileLoader.loadFileFromDiskCache(url);
+                                if(file != null) {
+                                    Log.v("cyz"," file size " + file.length());
+                                }
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                Log.v("cyz","onNext ");
+                            }
+
+                            @Override
+                            public void onNext(Long aLong) {
+                                Log.v("cyz","onNext " + aLong);
+                            }
+                        });
+//                        NetworkRequest request = new NetworkRequest(url);
+//                        request.test();
+//                        request.setNetworkResponse(new NetworkRequest.NetworkResponseHandler() {
+//                            @Override
+//                            public void responseReceiveHeader(Map<String, List<String>> headers) {
+//
+//                            }
+//
+//                            @Override
+//                            public void responseSuccess(String responseStr) {
+//                                Log.v("cyz","response = " + responseStr);
+//                            }
+//
+//                            @Override
+//                            public void responseComplete() {
+//
+//                            }
+//
+//                            @Override
+//                            public void responseError(String responseStr) {
+//
+//                            }
+//
+//                            @Override
+//                            public void responseReceiveData(byte[] dataRead, int readLen, long totalBytesRead) {
+////                                DownloadEntity downloadEntity = networkRequest.getDownloadEntity();
+////
+////                                FileOutputStream outputStream = null;
+////                                if(downloadEntity.isSupportResume()) {
+////                                    outputStream = new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/教务部关于选派我校优秀本科生2016学年秋季学期赴加拿大阿尔伯塔大学、新加坡国立大学交流学习的通知2.doc", true);
+////                                }else {
+////                                    outputStream = new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/教务部关于选派我校优秀本科生2016学年秋季学期赴加拿大阿尔伯塔大学、新加坡国立大学交流学习的通知2.doc");
+////                                }
+//
+////                                Log.v("cyz","download ok");
+////                                outputStream.flush();
+////                                outputStream.close();
+//                            }
+//                        });
+//                        NetworkManager.getInstance().sendRequest(request);
 //                        request.setHttpMethod(NetworkRequest.HttpMethod.HttpMethod_GET);
 ////                        DownloadEntity entity = new DownloadEntity(true,0,10000);
 //                        DownloadEntity entity = new DownloadEntity(true,10000,35329);

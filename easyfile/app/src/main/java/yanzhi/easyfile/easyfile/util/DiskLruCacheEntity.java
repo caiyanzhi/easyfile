@@ -6,6 +6,7 @@ import android.util.Log;
 import java.io.File;
 import java.io.IOException;
 
+import yanzhi.easyfile.easyfile.Network.FileUtil;
 import yanzhi.easyfile.easyfile.Network.HttpClientConfig;
 
 /**
@@ -26,6 +27,7 @@ public class DiskLruCacheEntity {
             initDiskCache();
         }
     }
+
     //若无指定存储目录，默认存储在Android制定的应用目录下面，根据是否有外置存储来自动选择
     public DiskLruCacheEntity(Context context, String cacheDirName, String aimDirPath){
         synchronized (diskCacheLock) {
@@ -72,9 +74,18 @@ public class DiskLruCacheEntity {
         }
     }
 
+    public File getDirFile(){
+        return diskCacheDir;
+    }
     public File getFile(String key) {
         synchronized (diskCacheLock) {
             return diskLruCache.getReadableFile(key);
+        }
+    }
+
+    public File getDirtyFile(String key) {
+        synchronized (diskCacheLock) {
+            return diskLruCache.getDirtyFile(key);
         }
     }
 
